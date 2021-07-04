@@ -1,0 +1,71 @@
+
+from pyspark.sql.functions import *
+from pyspark.sql.types import *
+from pyspark.sql.window import *
+
+primary_person_use_df=spark.read.option("header","true").csv("C:\\Users\\siddh\\Downloads\\Swapnali\\BD\\Data\\Primary_Person_use.csv")
+Units_use_df=spark.read.option("header","true").csv("C:\\Users\\siddh\\Downloads\\Swapnali\\BD\\Data\\Units_use.csv")
+
+1.soln1= primary_person_use_df.filter(" (lower(PRSN_GNDR_ID)=='male') and (DEATH_CNT==1) ").select("CRASH_ID").distinct()
+   = soln1.count()
+ ---Answer=180
+
+2.soln2=Units_use_df.filter("upper(VEH_BODY_STYL_ID) in ('MOTORCYCLE','POLICE MOTORCYCLE') ")
+ >>soln2.count()
+--answer:784
+
+missing=('other (explain in narrative)','na','unknown')
+3.soln3=primary_person_use_df.filter(" (lower(DRVR_LIC_STATE_ID) NOT IN('other (explain in narrative)','na','unknown')) AND (PRSN_GNDR_ID=='FEMALE')").groupBy("DRVR_LIC_STATE_ID").count().sort(desc("count"))
+-->>soln3.take(1)[0][0]
+---answer=texas
+
+
+
+4.
+
+prsn_crsh_id=primary_person_use_df.filter("TOT_INJRY_CNT !=0 or DEATH_CNT!=0").select("CRASH_ID").distinct()
+
+prsn_join_units=prsn_crsh_id.join(Units_use_df,Units_use_df["CRASH_ID"]==prsn_crsh_id["CRASH_ID"],'inner').drop(prsn_crsh_id["CRASH_ID"]).filter("upper(VEH_MAKE_ID) NOT IN('OTHER (EXPLAIN IN NARRATIVE)','NA','UNKNOWN')").select("CRASH_ID","VEH_MAKE_ID")
+
+veh_cnt=prsn_join_units.groupBy("VEH_MAKE_ID").agg(count("VEH_MAKE_ID").alias("count")).orderBy(desc("count")).withColumn("test",lit("1"))
+n=Window.partitionBy("test").orderBy(desc("count"))
+veh_order=veh_cnt.withColumn("row",row_number().over(n))
+soln4=veh_order.filter(veh_order.row.between(5,15)).select("VEH_MAKE_ID")
+soln4.show()
+
+6.
+>>> v1=veh.filter("upper(VEH_BODY_STYL_ID) In ('PASSENGER CAR, 2-DOOR','PASSENGER CAR, 4-DOOR','POLICE CAR/TRUCK')")
+>>> v2=v1.filter("((upper(CONTRIB_FACTR_1_ID)=='UNDER INFLUENCE - ALCOHOL') or (upper(CONTRIB_FACTR_2_ID)=='UNDER INFLUENCE - ALCOHOL') or (upper(CONTRIB_FACTR_P1_ID)=='UNDER INFLUENCE - ALCOHOL'))").select("CRASH_ID").distinct()
+
+prsn=spark.read.option("header","true").csv("C:\\Users\\siddh\\Downloads\\Swapnali\\BD\\Data\\Primary_Person_use.csv")
+
+joi=v2.join(prsn,on="CRASH_ID",how="inner").filter("(length(DRVR_ZIP)=5)").select("CRASH_ID","DRVR_ZIP").groupBy("DRVR_ZIP").agg(count("*").alias("count"))
+soln6=prsn.filter("(length(DRVR_ZIP)=5)").select("CRASH_ID","DRVR_ZIP").groupBy("DRVR_ZIP").agg(count("*").alias("count")).orderBy(desc("count")).select("DRVR_ZIP").show(5)
+
+7.
+veh=spark.read.option("header","true").csv("C:\\Users\\siddh\\Downloads\\Swapnali\\BD\\Data\\Units_use.csv")
+dmg=spark.read.option("header","true").csv("C:\\Users\\siddh\\Downloads\\Swapnali\\BD\\Data\\Damages_use.csv")
+dmg_df=dmg.select("CRASH_ID").distinct()
+VEH_DMAG_SCL_1_ID : DAMAGED 6,DAMAGED 5,DAMAGED 7 HIGHEST  VEH_DMAG_SCL_1_ID
+FIN_RESP_TYPE_ID  PROOF OF LIABILITY INSURANCE, LIABILITY INSURANCE POLICY
+
+prefil=veh.filter("((upper(VEH_DMAG_SCL_1_ID) in ('DAMAGED 6','DAMAGED 7','DAMAGED 5','DAMAGED 7 HIGHEST')) or (upper(VEH_DMAG_SCL_2_ID) in ('DAMAGED 6','DAMAGED 7','DAMAGED 5','DAMAGED 7 HIGHEST')))")
+
+veh_fil=prefil.filter("((upper(FIN_RESP_TYPE_ID) in ('PROOF OF LIABILITY INSURANCE','LIABILITY INSURANCE POLICY')) and (upper(VEH_BODY_STYL_ID) in ('PASSENGER CAR, 2-DOOR','PASSENGER CAR, 4-DOOR','POLICE CAR/TRUCK')))").select("CRASH_ID").distinct()
+
+
+soln7=veh_fil.subtract(dmg_df)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
