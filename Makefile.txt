@@ -7,10 +7,9 @@ init:
 analyze:
 	flake8 ./src
 
-run_tests:
-	pytest --cov=src test/solution/
 
-# comand line example: make run JOB_NAME=pi CONF_PATH=/your/path/pyspark-project-template/src/solution
+
+# comand line example: make run JOB_NAME=pi CONF_PATH=/source/file/directory/ OUT=/output/file/directory/
 run:
 	# cleanup
 	find . -name '__pycache__' | xargs rm -rf
@@ -20,4 +19,4 @@ run:
 	cd src/ && zip -r ../solution.zip solution/
 
   # run the job
-	spark-submit --py-files solution.zip src/main.py --job $(JOB_NAME) --res-path $(CONF_PATH)
+	spark-submit --py-files solution.zip src/main.py --job $(JOB_NAME) --res-path $(CONF_PATH) 

@@ -6,16 +6,8 @@ import sys
 import json
 from solution
 
-if os.path.exists('jobs.zip'):
-    sys.path.insert(0, 'jobs.zip')
-
-
-def get_config(path, job):
-    file_path = path + '/' + job + '/resources/args.json'
-    with open(file_path, encoding='utf-8') as json_file:
-        config = json.loads(json_file.read())
-    config['relative_path'] = path
-    return config
+if os.path.exists('solution.zip'):
+    sys.path.insert(0, 'solution.zip')
 
 
 if __name__ == '__main__':
@@ -24,19 +16,24 @@ if __name__ == '__main__':
     parser.add_argument('--job', type=str, required=True, dest='job_name',
                         help='The name of the spark job you want to run')
     parser.add_argument('--res-path', type=str, required=True, dest='res_path',
-                        help='Path to the jobs resurces')
-
+                        help='Path to the solution resurces')
+    
     args = parser.parse_args()
+    src_path=args.res_path
 
     spark = SparkSession\
         .builder\
         .appName(args.job_name)\
         .getOrCreate()
 
-    job_module = importlib.import_module('jobs.%s' % args.job_name)
-    ob1=job_module.Solution(spark,get_Config(args.res_path, args.job_name))
-    res=ob1.output_1()
-    print(res)
-    #res = job_module.run(spark, get_config(args.res_path, args.job_name))
+    job_module = importlib.import_module(args.job_name)
+    ob1=job_module.Solution(spark,src_path)
+    answer1=ob1.solution1()
+    answer2=ob1.solution2()
+    answer3=ob1.solution3()
+    answer4=ob1.solution4()
+    answer6=ob1.solution6()
+    answer7=ob1.solution7()
+
 
     print('[JOB {job} RESULT]: {result}'.format(job=args.job_name, result=res))
